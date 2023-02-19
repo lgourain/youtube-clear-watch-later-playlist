@@ -14,15 +14,21 @@ Step by step tutorial :
 3. Copy and paste this code in the console tab :
 
 ```javascript
-const interval = window.setInterval(() => {
-  const dropdownButton = document.querySelector('#contents .dropdown-trigger.style-scope.ytd-menu-renderer');
-  dropdownButton.click();
-  let nbItems = document.querySelector('#items.ytd-menu-popup-renderer').childElementCount;
-  if (nbItems > 1) {
-  	nbItems = 3;
-  }
-  const deleteButton = document.querySelector(`#items.ytd-menu-popup-renderer :nth-child(${nbItems})`);
-  deleteButton.click();
+const buttons = document.querySelectorAll('#contents yt-icon-button#button');
+
+let i = 0;
+const interval = setInterval(() => {
+  const button = buttons[i];
+
+  // open dropdown menu
+  button.click();
+
+  // click 3rd link of dropdown menu
+  const items = document.querySelector('tp-yt-paper-listbox#items');
+  const removeFromPlaylistButton = items.children[2];
+  removeFromPlaylistButton.click();
+
+  i += 1;
 }, 100);
 ```
 
