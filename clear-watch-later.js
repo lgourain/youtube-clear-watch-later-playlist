@@ -1,8 +1,8 @@
 /**
  * YouTube Watch Later Playlist Cleaner
  *
- * Ce script permet de supprimer tous les éléments de votre playlist "À regarder plus tard" YouTube.
- * Il gère automatiquement les erreurs d'API (409 Conflict, 400 Bad Request) et le lazy loading.
+ * This script allows you to delete all items from your YouTube "Watch Later" playlist.
+ * It automatically handles API errors (409 Conflict, 400 Bad Request) and lazy loading.
  *
  * @author lgourain
  * @license MIT
@@ -13,14 +13,14 @@
 
   // Configuration
   const CONFIG = {
-    deleteInterval: 100, // Délai entre chaque suppression (ms)
-    retryDelay: 2000, // Délai avant retry après erreur 409/400 (ms)
-    maxRetries: 3, // Nombre max de tentatives par vidéo
-    checkScrollInterval: 500, // Intervalle de vérification du lazy loading (ms)
-    statsUpdateInterval: 1000, // Intervalle de mise à jour des stats (ms)
+    deleteInterval: 100, // Delay between each deletion (ms)
+    retryDelay: 2000, // Delay before retry after 409/400 error (ms)
+    maxRetries: 3, // Maximum number of attempts per video
+    checkScrollInterval: 500, // Lazy loading check interval (ms)
+    statsUpdateInterval: 1000, // Stats update interval (ms)
   };
 
-  // État du script
+  // Script state
   const state = {
     currentIndex: 0,
     deletedCount: 0,
@@ -34,7 +34,7 @@
   };
 
   /**
-   * Affiche les statistiques en temps réel
+   * Display real-time statistics
    */
   function updateStats() {
     const buttons = document.querySelectorAll(
@@ -67,17 +67,17 @@
   }
 
   /**
-   * Tente de supprimer une vidéo avec gestion des retries
+   * Attempt to delete a video with retry handling
    */
   async function deleteVideo(button, retryAttempt = 0) {
     try {
-      // Ouvrir le menu dropdown
+      // Open dropdown menu
       button.click();
 
-      // Attendre un peu que le menu s'affiche
+      // Wait a bit for the menu to display
       await sleep(50);
 
-      // Cliquer sur le 3ème élément du menu (Retirer de la playlist)
+      // Click on the 3rd menu item (Remove from playlist)
       const items = document.querySelector("tp-yt-paper-listbox#items");
       if (!items || !items.children[2]) {
         throw new Error("Menu items not found");
@@ -90,7 +90,7 @@
       return true;
     } catch (error) {
       console.warn(
-        `Erreur lors de la suppression (tentative ${retryAttempt + 1}/${
+        `Error during deletion (attempt ${retryAttempt + 1}/${
           CONFIG.maxRetries
         }):`,
         error.message
@@ -102,35 +102,33 @@
         return deleteVideo(button, retryAttempt + 1);
       } else {
         state.errorCount++;
-        console.error(
-          "Échec après plusieurs tentatives, passage à la vidéo suivante"
-        );
+        console.error("Failed after multiple attempts, moving to next video");
         return false;
       }
     }
   }
 
   /**
-   * Fonction sleep utilitaire
+   * Utility sleep function
    */
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
-   * Vérifie et gère le lazy loading
+   * Check and handle lazy loading
    */
   function checkLazyLoading() {
     const buttons = document.querySelectorAll(
       "#contents yt-icon-button#button"
     );
 
-    // Si le nombre de boutons a diminué de manière significative, c'est bon signe
+    // If the number of buttons has decreased significantly, it's a good sign
     if (buttons.length < state.lastButtonCount) {
       state.lastButtonCount = buttons.length;
     }
 
-    // Si on arrive vers la fin de la liste visible, scroller pour charger plus
+    // If we're near the end of the visible list, scroll to load more
     if (state.currentIndex >= buttons.length - 10 && buttons.length > 0) {
       const lastVideo = buttons[buttons.length - 1];
       lastVideo.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -138,24 +136,24 @@
   }
 
   /**
-   * Boucle principale de suppression
+   * Main deletion loop
    */
   async function deleteLoop() {
     const buttons = document.querySelectorAll(
       "#contents yt-icon-button#button"
     );
 
-    // Vérifier s'il reste des vidéos
+    // Check if there are any videos left
     if (buttons.length === 0) {
-      console.log("\n✅ Toutes les vidéos visibles ont été supprimées !");
+      console.log("\n✅ All visible videos have been deleted!");
       console.log(
-        "💡 Si la playlist n'est pas vide, rechargez la page et relancez le script."
+        "💡 If the playlist is not empty, reload the page and restart the script."
       );
       stopCleaning();
       return;
     }
 
-    // Toujours cibler le premier bouton (car après suppression, les indices changent)
+    // Always target the first button (because after deletion, indices change)
     const button = buttons[0];
 
     if (button) {
@@ -165,11 +163,11 @@
   }
 
   /**
-   * Démarre le nettoyage de la playlist
+   * Start cleaning the playlist
    */
   function startCleaning() {
     if (state.isRunning) {
-      console.warn("⚠️  Le script est déjà en cours d'exécution !");
+      console.warn("⚠️  The script is already running!");
       return;
     }
 
@@ -177,15 +175,15 @@
       "#contents yt-icon-button#button"
     );
     if (buttons.length === 0) {
-      console.error("❌ Aucune vidéo trouvée dans la playlist.");
+      console.error("❌ No videos found in the playlist.");
       console.log(
-        "💡 Assurez-vous d'être sur la page : https://www.youtube.com/playlist?list=WL"
+        "💡 Make sure you are on the page: https://www.youtube.com/playlist?list=WL"
       );
       return;
     }
 
-    console.log("🚀 Démarrage du nettoyage de la playlist...");
-    console.log(`📊 ${buttons.length} vidéos détectées\n`);
+    console.log("🚀 Starting playlist cleaning...");
+    console.log(`📊 ${buttons.length} videos detected\n`);
 
     state.isRunning = true;
     state.startTime = Date.now();
@@ -195,20 +193,20 @@
     state.errorCount = 0;
     state.retryCount = 0;
 
-    // Boucle de suppression
+    // Deletion loop
     state.interval = setInterval(deleteLoop, CONFIG.deleteInterval);
 
-    // Affichage des stats
+    // Stats display
     state.statsInterval = setInterval(updateStats, CONFIG.statsUpdateInterval);
     updateStats();
   }
 
   /**
-   * Arrête le nettoyage de la playlist
+   * Stop cleaning the playlist
    */
   function stopCleaning() {
     if (!state.isRunning) {
-      console.warn("⚠️  Le script n'est pas en cours d'exécution.");
+      console.warn("⚠️  The script is not running.");
       return;
     }
 
@@ -238,19 +236,16 @@
     console.log("╚════════════════════════════════════════════════════════╝\n");
   }
 
-  // Exposer les fonctions globalement
+  // Expose functions globally
   window.startCleaning = startCleaning;
   window.stopCleaning = stopCleaning;
 
-  // Démarrage automatique
+  // Display welcome message
   console.log("╔════════════════════════════════════════════════════════╗");
-  console.log("║   YouTube Watch Later Playlist Cleaner - Chargé       ║");
+  console.log("║   YouTube Watch Later Playlist Cleaner - Loaded       ║");
   console.log("╠════════════════════════════════════════════════════════╣");
-  console.log("║ Commandes disponibles :                               ║");
-  console.log("║  • startCleaning() - Démarre le nettoyage             ║");
-  console.log("║  • stopCleaning()  - Arrête le nettoyage              ║");
+  console.log("║ Available commands:                                    ║");
+  console.log("║  • startCleaning() - Start cleaning                    ║");
+  console.log("║  • stopCleaning()  - Stop cleaning                     ║");
   console.log("╚════════════════════════════════════════════════════════╝\n");
-
-  // Démarrage automatique
-  startCleaning();
 })();
